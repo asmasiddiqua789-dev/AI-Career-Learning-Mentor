@@ -1,15 +1,4 @@
 import streamlit as st
-from PyPDF2 import PdfReader
-import google.generativeai as genai
-import os
-from dotenv import load_dotenv
-
-# Load API Key
-load_dotenv()
-
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-model = genai.GenerativeModel("models/gemini-flash-latest")
 
 st.set_page_config(
     page_title="AI Career & Learning Mentor",
@@ -17,200 +6,102 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🎓 AI Career & Learning Mentor")
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+# ---------- CSS ----------
+
 st.markdown("""
-## 👋 Welcome!
+<style>
 
-This AI-powered application helps students with:
+.stApp{
+    background:linear-gradient(135deg,#050816,#0F172A,#111827);
+}
 
-✅ Resume Analysis
+#MainMenu, header, footer{
+    visibility:hidden;
+}
 
-✅ Career Guidance
+.block-container{
+    max-width:650px;
+    padding-top:40px;
+}
 
-✅ Learning Roadmap
+h1,h2,h3,p,label{
+    color:white !important;
+}
 
-✅ Internship Suggestions
+.stTextInput input{
+    background:#1B2236;
+    color:white;
+    border-radius:10px;
+    border:1px solid #3A4668;
+}
 
-✅ AI Chatbot
-""")
-st.divider()
+</style>
+""", unsafe_allow_html=True)
 
-st.sidebar.title("🎓 Features")
+# ---------- TITLE ----------
 
-option = st.sidebar.selectbox(
-    "Choose a Feature",
-    [
-        "Resume Analyzer",
-        "Career Guidance",
-        "Learning Roadmap",
-        "Internship Finder",
-        "AI Chatbot"
-    ]
-)
+st.markdown("""
+<div style="text-align:center">
 
-# ---------------- Resume Analyzer ----------------
+<h1>🎓 AI Career & Learning Mentor</h1>
 
-if option == "Resume Analyzer":
+<p>Your AI-Powered Career & Learning Companion ✨</p>
 
-    st.header("📄 Resume Analyzer")
+</div>
+""", unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader(
-        "Upload your Resume (PDF)",
-        type=["pdf"]
-    )
+# ---------- LOGIN ----------
 
-    if uploaded_file is not None:
+if not st.session_state.logged_in:
 
-        reader = PdfReader(uploaded_file)
+    st.markdown("## Welcome Back 👋")
 
-        resume_text = ""
+    tab1, tab2 = st.tabs(["🔑 Login", "📝 Sign Up"])
 
-        for page in reader.pages:
-            text = page.extract_text()
-            if text:
-                resume_text += text
+    with tab1:
 
-        st.success("Resume uploaded successfully!")
-        st.balloons()
+        username = st.text_input("Username")
 
-        st.subheader("Extracted Resume Text")
-
-        st.text_area(
-            "Resume",
-            resume_text,
-            height=300
+        password = st.text_input(
+            "Password",
+            type="password"
         )
 
-        score = 80
+        if st.button("Login", type="primary", use_container_width=True):
 
-        st.subheader("📊 ATS Resume Score")
+            if username == "admin" and password == "1234":
 
-        st.progress(score)
+                st.session_state.logged_in = True
 
-        st.write(f"Score: {score}/100")
+                st.switch_page("pages/1_Dashboard.py")
 
-        if score >= 80:
-            st.success("Excellent Resume!")
-        elif score >= 60:
-            st.warning("Good Resume. Add more projects.")
-        else:
-            st.error("Needs Improvement.")
+            else:
 
-# ---------------- Career Guidance ----------------
+                st.error("Invalid Username or Password")
 
-elif option == "Career Guidance":
+    with tab2:
 
-    st.header("🎯 AI Career Guidance")
+        new_user = st.text_input("Create Username")
 
-    question = st.text_area("Ask your career question")
+        new_pass = st.text_input(
+            "Create Password",
+            type="password"
+        )
 
-    if st.button("Get AI Guidance"):
+        confirm = st.text_input(
+            "Confirm Password",
+            type="password"
+        )
 
-        if question:
+        if st.button("Create Account", type="primary", use_container_width=True):
 
-            with st.spinner("🤖 AI is thinking..."):
+            if new_pass == confirm:
 
-                response = model.generate_content(question)
+                st.success("Account Created Successfully!")
 
-            st.success("Response Generated!")
+            else:
 
-            with st.expander("📄 View AI Response"):
-                st.write(response.text)
-
-        else:
-            st.warning("Please enter a question.")
-# ---------------- Learning Roadmap ----------------
-elif option == "Learning Roadmap":
-
-    st.header("📚 Learning Roadmap")
-
-    skill = st.text_input(
-        "Enter a skill",
-        placeholder="Example: Python, Machine Learning, Data Science"
-    )
-
-    if st.button("Generate Roadmap"):
-
-        if skill:
-
-            with st.spinner("Generating roadmap..."):
-
-                prompt = f"""
-Create a detailed learning roadmap for {skill}.
-
-Include:
-1. Beginner topics
-2. Intermediate topics
-3. Advanced topics
-4. Best free resources
-5. Projects to build
-6. Interview preparation tips
-"""
-
-                response = model.generate_content(prompt)
-
-            st.success("Roadmap Generated!")
-            st.balloons()
-
-            with st.expander("📄 View Learning Roadmap"):
-                st.write(response.text)
-
-        else:
-            st.warning("Please enter a skill.")
-
-
-# ---------------- Internship Finder ----------------
-
-elif option == "Internship Finder":
-
-    st.header("💼 Internship Finder")
-
-    skill = st.text_input("Enter your skills")
-
-    if st.button("Find Internships"):
-
-        if skill:
-
-            prompt = f"""
-Suggest internships for a student with skills in {skill}.
-
-Mention:
-1. Companies
-2. Internship platforms
-3. Skills required
-4. Tips to get selected
-"""
-
-            response = model.generate_content(prompt)
-
-            st.success("Internship Suggestions Ready!")
-
-            with st.expander("💼 View Internship Suggestions"):
-                st.write(response.text)
-
-        else:
-            st.warning("Please enter your skills.")
-# ---------------- AI Chatbot ----------------
-elif option == "AI Chatbot":
-
-    st.header("🤖 AI Chatbot")
-
-    prompt = st.text_area("Ask anything")
-
-    if st.button("Send"):
-
-        if prompt:
-
-            response = model.generate_content(prompt)
-
-            st.success("AI Response")
-
-            with st.expander("🤖 View Answer"):
-                st.write(response.text)
-
-        else:
-            st.warning("Please enter a prompt.")
-
-    st.markdown("---")
-    st.caption("🎓 Developed by Asma Siddiqua")
-    st.caption("AI Career & Learning Mentor | 2026")
+                st.error("Passwords do not match.")
